@@ -1,12 +1,16 @@
+# Pin compose project name so CLI runs and Arcane deployments
+# always target the same containers/network (prevents duplicates).
+name: bitsmonitoring
+
 services:
   uptime-kuma:
     image: louislam/uptime-kuma:2
-    container_name: uptime-kuma
     restart: unless-stopped
     ports:
       - "${UPTIME_KUMA_PORT:-3002}:3001"
     volumes:
-      - uptime-kuma-data:/app/data
+      - data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - UPTIME_KUMA_HOST=${UPTIME_KUMA_HOST:-0.0.0.0}
     healthcheck:
@@ -25,7 +29,14 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    name: bitsmonitoring-network
+    driver: bridge
 
 volumes:
-  uptime-kuma-data:
-    name: uptime-kuma-data
+  data:
+    name: bitsmonitoring_data
