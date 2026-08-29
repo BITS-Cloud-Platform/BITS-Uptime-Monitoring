@@ -1,0 +1,41 @@
+name: "🌌 Warp Sync"
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Daily 07:00 WIB
+  workflow_dispatch:
+
+jobs:
+  warp-hunter:
+    name: "🛰️ Warp Hunter"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: "📦 Checkout"
+        uses: actions/checkout@v4
+
+      - name: "🔍 Check Kuma"
+        id: kuma
+        run: |
+          docker pull louislam/uptime-kuma:2
+          DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' louislam/uptime-kuma:2 | cut -d'@' -f2)
+          echo "digest=$DIGEST" >> $GITHUB_OUTPUT
+          echo "Kuma: $DIGEST"
+
+      - name: "⚖️ Compare"
+        run: |
+          mkdir -p .upstream
+          echo "${{ steps.kuma.outputs.digest }}" > .upstream/uptime-kuma.digest
+          git diff --color || true
+          git diff --quiet && echo "No update" && exit 0
+          echo "New warp found"
+
+      - name: "💾 Push"
+        run: |
+          git diff --quiet && exit 0
+          git config user.name "Warp Bot 🤖"
+          git config user.email "warp-bot@bits.co.id"
+          git add .upstream/
+          git commit -m "chore: bump uptime-kuma ${{ steps.kuma.outputs.digest }}"
+          git push
