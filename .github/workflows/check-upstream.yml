@@ -27,13 +27,13 @@ jobs:
         run: |
           mkdir -p .upstream
           echo "${{ steps.kuma.outputs.digest }}" > .upstream/uptime-kuma.digest
-          git diff --color || true
-          git diff --quiet && echo "No update" && exit 0
+          git status --porcelain
+          if [ -z "$(git status --porcelain)" ]; then echo "No update" && exit 0; fi
           echo "New warp found"
 
       - name: "💾 Push"
         run: |
-          git diff --quiet && exit 0
+          if [ -z "$(git status --porcelain)" ]; then exit 0; fi
           git config user.name "Warp Bot 🤖"
           git config user.email "warp-bot@bits.co.id"
           git add .upstream/
